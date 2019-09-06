@@ -28,7 +28,7 @@ fn from_path<'a>() -> std::io::Result<SeekStream<'a>> {
     SeekStream::from_path("fly_me_to_the_moon.webm")
 }
 
-// stream some longer media
+// some long media
 #[get("/long")]
 fn long<'a>() -> std::io::Result<SeekStream<'a>> {
     SeekStream::from_path("kosmodrom.webm")
