@@ -1,5 +1,9 @@
 # rocket_seek_stream
-A [Rocket](https://github.com/SergioBenitez/Rocket) responder for types implementing the `Read + Seek` traits, such as files and `std::io::Cursor`, that will respond to range requests. The `Content-Type` can optionally be inferred by taking a sample of bytes from the beginning of the stream, or given manually.
+A [Rocket](https://github.com/SergioBenitez/Rocket) responder for types implementing the `Read + Seek` traits, such as files and `std::io::Cursor`, that will respond to range requests with a 206 Partial Content response. The `Content-Type` can optionally be inferred by taking a sample of bytes from the beginning of the stream, or given manually.
+
+This supports both the single and multipart/byterange requests.
+
+[https://tools.ietf.org/html/rfc7233](https://tools.ietf.org/html/rfc7233)
 
 ## Cargo.toml
 Add this to your dependencies.
@@ -9,6 +13,7 @@ rocket_seek_stream = {git="https://github.com/rydz/rocket_seek_stream"}
 ```
 
 ## Examples
+Serving a file from the disk
 
 ```rust
 #![feature(proc_macro_hygiene, decl_macro)]
@@ -31,6 +36,18 @@ fn main() {
     )
     .mount("/", routes![home])
    .launch();
+}
+```
+
+Serving an in memory buffer
+```rust
+#[get("/")]
+fn cursor<'a>() -> SeekStream<'a> {
+    let bytes = &include_bytes!("./fly_me_to_the_moon.webm")[..];
+    let len = bytes.len();
+    let stream = std::io::Cursor::new(bytes);
+
+    SeekStream::with_opts(stream, len as u64, "video/webm")
 }
 ```
 
