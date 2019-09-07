@@ -539,16 +539,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rocket-seek-stream"
-version = "0.1.0"
-dependencies = [
- "rand 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "range_header 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rocket 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "tree_magic 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "rocket_codegen"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -575,6 +565,16 @@ dependencies = [
  "state 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "rocket_seek_stream"
+version = "0.1.1"
+dependencies = [
+ "rand 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "range_header 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rocket 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tree_magic 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

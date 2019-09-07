@@ -1,6 +1,6 @@
 [package]
-name = "rocket-seek-stream"
-version = "0.1.0"
+name = "rocket_seek_stream"
+version = "0.1.1"
 authors = ["Ryan Dzengelewski <rdzengelewski@gmail.com>"]
 edition = "2018"
 
