@@ -7,6 +7,7 @@ edition = "2018"
 license="MIT"
 repository="https://github.com/rydz/rocket_seek_stream"
 readme="README.md"
+keywords=["rocket", "rocket-rs", "partial content", "range request", "206"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
