@@ -53,3 +53,8 @@ fn cursor<'a>() -> SeekStream<'a> {
 ```
 
 Use `cargo run --example server` to run the example. run `examples/download.sh` to download the media it depends on using [youtube-dl](https://github.com/ytdl-org/youtube-dl).
+
+## TODO
+- Write some tests
+
+I've compared the output of the Golang stdlib http router's multipart response to what I output here and it looks about the same except for a small difference in whitespace.
