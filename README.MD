@@ -1,8 +1,7 @@
 # rocket_seek_stream
-A [Rocket](https://github.com/SergioBenitez/Rocket) responder for types implementing the `Read + Seek` traits, such as files and `std::io::Cursor`, that will respond to range requests with a 206 Partial Content response. The `Content-Type` can optionally be inferred by taking a sample of bytes from the beginning of the stream, or given manually.
+A [Rocket](https://github.com/SergioBenitez/Rocket) responder for types implementing the `Read + Seek` traits, such as files and `std::io::Cursor`, that will respond to range requests with a 206 Partial Content response. The `Content-Type` can optionally be inferred by taking a sample of bytes from the beginning of the stream, or given manually. An `Accept-Ranges: bytes` header will be sent in all responses to notify browsers that range requests are supported for the resource.
 
-This supports both the single and multipart/byterange requests.
-
+This supports both single and multipart/byterange requests.
 [https://tools.ietf.org/html/rfc7233](https://tools.ietf.org/html/rfc7233)
 
 ## Cargo.toml
