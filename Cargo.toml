@@ -1,8 +1,11 @@
 [package]
 name = "rocket_seek_stream"
 version = "0.2.0"
+description="Rocket-rs responder to range requests using types that implement Read + Seek"
 authors = ["Ryan Dzengelewski <rdzengelewski@gmail.com>"]
 edition = "2018"
+repository="https://github.com/rydz/rocket_seek_stream"
+readme="README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
