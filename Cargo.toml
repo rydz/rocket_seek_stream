@@ -4,6 +4,7 @@ version = "0.2.0"
 description="Rocket-rs responder to range requests using types that implement Read + Seek"
 authors = ["Ryan Dzengelewski <rdzengelewski@gmail.com>"]
 edition = "2018"
+license="LICENSE.md"
 repository="https://github.com/rydz/rocket_seek_stream"
 readme="README.md"
 
