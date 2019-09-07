@@ -152,11 +152,11 @@ impl<'a> Read for MultipartReader<'a> {
         if !self.wrote_boundary_header {
             self.stream.seek(SeekFrom::Start(start))?;
             self.write_boundary()?;
-            self.write_boundary_header("Content-Type", self.content_type.clone())?;
             self.write_boundary_header(
                 "Content-Range",
                 format!("bytes {}-{}/{}", start, end, self.stream_len).as_str(),
             )?;
+            self.write_boundary_header("Content-Type", self.content_type.clone())?;
             self.write_boundary_end()?;
 
             self.wrote_boundary_header = true;
