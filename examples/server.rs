@@ -13,7 +13,7 @@ extern crate rocket;
 use rocket_seek_stream::SeekStream;
 
 // stream from an in memory buffer
-#[get("/")]
+#[get("/memory")]
 fn hello<'a>() -> SeekStream<'a> {
     let bytes = &include_bytes!("./cruel_angels_thesis.webm")[..];
     let len = bytes.len();
@@ -34,6 +34,12 @@ fn long<'a>() -> std::io::Result<SeekStream<'a>> {
     SeekStream::from_path("kosmodrom.webm")
 }
 
+// some longer media
+#[get("/")]
+fn longer<'a>() -> std::io::Result<SeekStream<'a>> {
+    SeekStream::from_path("ison.webm")
+}
+
 fn main() {
     rocket::Rocket::custom(
         rocket::Config::build(rocket::config::Environment::Development)
@@ -42,6 +48,6 @@ fn main() {
             .finalize()
             .unwrap(),
     )
-    .mount("/", routes![hello, from_path, long,])
+    .mount("/", routes![hello, from_path, long, longer])
     .launch();
 }
