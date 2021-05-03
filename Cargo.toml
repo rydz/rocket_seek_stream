@@ -12,7 +12,7 @@ keywords=["rocket", "rocket-rs", "partial-content", "range-request", "206"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = "0.4.2"
-tree_magic = "0.2.1"
-range_header = "0.2.0"
-rand = "0.7.0"
+rocket = "0.4"
+tree_magic = "0.2"
+range_header = "0.2"
+rand = "0.7"
