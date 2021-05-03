@@ -1,4 +1,4 @@
-#![feature(seek_convenience)]
+#![feature(seek_stream_len)]
 
 //! This crate provides a seekable stream responder for rocket that will satisfy range requests.
 //!
