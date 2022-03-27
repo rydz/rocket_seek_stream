@@ -1,12 +1,14 @@
 # rocket_seek_stream
+
 [crates.io](https://crates.io/crates/rocket_seek_stream)
 
-A [Rocket](https://github.com/SergioBenitez/Rocket) responder for types implementing the `Read + Seek` traits, such as files and `std::io::Cursor`, that will respond to range requests with a 206 Partial Content response. The `Content-Type` can optionally be inferred by taking a sample of bytes from the beginning of the stream, or given manually. An `Accept-Ranges: bytes` header will be sent in all responses to notify browsers that range requests are supported for the resource.
+A [Rocket](https://github.com/SergioBenitez/Rocket) responder for types implementing the `AsyncRead + AsyncSeek` traits, such as files and `rocket::futures::io::Cursor`, that will respond to range requests with a 206 Partial Content response. The `Content-Type` can optionally be inferred by taking a sample of bytes from the beginning of the stream, or given manually. An `Accept-Ranges: bytes` header will be sent in all responses to notify browsers that range requests are supported for the resource.
 
 This supports both single and multipart/byterange requests.
 [https://tools.ietf.org/html/rfc7233](https://tools.ietf.org/html/rfc7233)
 
 ## Cargo.toml
+
 Add this to your dependencies.
 
 ```
@@ -14,6 +16,7 @@ rocket_seek_stream = {git="https://github.com/rydz/rocket_seek_stream"}
 ```
 
 ## Examples
+
 Serving a file from the disk
 
 ```rust
@@ -26,21 +29,20 @@ use rocket_seek_stream::SeekStream;
 fn home<'a>() -> std::io::Result<SeekStream<'a>> {
     SeekStream::from_path("kosmodrom.webm")
 }
- 
-fn main() {
-    rocket::Rocket::custom(
-        rocket::Config::build(rocket::config::Environment::Development)
-            .address("localhost")
-            .port(8000)
-            .finalize()
-            .unwrap(),
-    )
-    .mount("/", routes![home])
-   .launch();
+
+#[rocket::main]
+async fn main() {
+    match rocket::build().mount("/", routes![home]).launch().await {
+        Ok(_) => (),
+        Err(e) => {
+            eprintln!("Rocket stopped unexpectedly. (Error {})", e);
+        }
+    };
 }
 ```
 
 Serving an in memory buffer
+
 ```rust
 #[get("/")]
 fn cursor<'a>() -> SeekStream<'a> {
@@ -55,6 +57,7 @@ fn cursor<'a>() -> SeekStream<'a> {
 Use `cargo run --example server` to run the example. run `examples/download.sh` to download the media it depends on using [youtube-dl](https://github.com/ytdl-org/youtube-dl).
 
 ## TODO
+
 - Write some tests
 
 I've compared the output of the Golang stdlib http router's multipart response to what I output here and it looks about the same except for a small difference in whitespace.
