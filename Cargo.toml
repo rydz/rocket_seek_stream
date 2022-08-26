@@ -1,9 +1,9 @@
 [package]
 name = "rocket_seek_stream"
-version = "0.2.4"
-description="Rocket-rs responder to range requests using types that implement Read + Seek"
-authors = ["Ryan Dzengelewski <rdzengelewski@gmail.com>"]
-edition = "2018"
+version = "0.2.5"
+description="Rocket-rs 0.5.0-rc1 responder to range requests using types that implement AsyncRead + AsyncSeek"
+authors = ["Ryan Dzengelewski <rdzengelewski@gmail.com>", "Samuel Rembisz <sjrembisz07@gmail.com>"]
+edition = "2021"
 license="MIT"
 repository="https://github.com/rydz/rocket_seek_stream"
 readme="README.md"
@@ -12,7 +12,8 @@ keywords=["rocket", "rocket-rs", "partial-content", "range-request", "206"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = "0.4"
+rocket = "0.5.0-rc.1"
 tree_magic = "0.2"
 range_header = "0.2"
-rand = "0.7"
+rand = "0.8.5"
+futures = "0.3.21"

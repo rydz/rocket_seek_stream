@@ -1,8 +1,19 @@
 #![allow(dead_code)]
+#![allow(unused_must_use)]
 
 use crate::ReadSeek;
 use rand;
-use std::io::{Cursor, Read, Seek, SeekFrom, Write};
+use rocket::futures::io::Cursor;
+use rocket::futures::AsyncWriteExt;
+use rocket::tokio::io::ReadBuf;
+use rocket::tokio::runtime::Handle;
+use rocket::{
+    futures::executor::block_on,
+    tokio::io::{AsyncRead, AsyncSeek, AsyncSeekExt},
+};
+use std::io::SeekFrom;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
 pub type Ranges = Vec<(u64, u64)>;
 
@@ -26,7 +37,7 @@ fn random_boundary() -> String {
 /// with multipart/byteranges headers and boundaries.
 pub struct MultipartReader<'a> {
     stream_len: u64,
-    stream: Box<dyn ReadSeek + 'a>,
+    stream: Pin<Box<dyn ReadSeek + 'a>>,
     ranges: Ranges,
 
     // Current index in the ranges vector being served
@@ -51,9 +62,9 @@ impl<'a> MultipartReader<'a> {
         ranges: Vec<(u64, u64)>,
     ) -> MultipartReader<'a>
     where
-        T: Read + Seek + 'a,
+        T: AsyncRead + AsyncSeek + Send + 'a,
     {
-        let stream = Box::new(stream);
+        let stream = Box::pin(stream);
 
         return MultipartReader {
             stream_len,
@@ -69,8 +80,10 @@ impl<'a> MultipartReader<'a> {
 
     /// write the boundary into the buffer
     fn write_boundary(&mut self) -> std::io::Result<()> {
+        let handle = Handle::current();
+        handle.enter();
         let boundary = format!("\r\n--{}\r\n", self.boundary);
-        self.buffer.write_all(boundary.as_bytes())
+        block_on(self.buffer.write_all(boundary.as_bytes()))
     }
 
     /// Write a header to buffer
@@ -79,41 +92,65 @@ impl<'a> MultipartReader<'a> {
         header: impl AsRef<str>,
         value: impl AsRef<str>,
     ) -> std::io::Result<()> {
+        let handle = Handle::current();
+        handle.enter();
         let header = format!("{}: {}\r\n", header.as_ref(), value.as_ref());
-        self.buffer.write_all(header.as_bytes())
+        block_on(self.buffer.write_all(header.as_bytes()))
     }
 
     /// Write CRLF to buffer
     fn write_boundary_end(&mut self) -> std::io::Result<()> {
-        self.buffer.write_all("\r\n".as_bytes())
+        let handle = Handle::current();
+        handle.enter();
+        block_on(self.buffer.write_all("\r\n".as_bytes()))
     }
 
     // Close the multipart form by sending the boundary closer field.
     fn write_boundary_closer(&mut self) -> std::io::Result<()> {
-        self.buffer
-            .write_all(format!("\r\n--{}--\r\n\r\n", &self.boundary).as_bytes())
+        let handle = Handle::current();
+        handle.enter();
+        block_on(
+            self.buffer
+                .write_all(format!("\r\n--{}--\r\n\r\n", &self.boundary).as_bytes()),
+        )
     }
 
     /// Empty the buffer by truncating the underlying vector
     fn clear_buffer(&mut self) {
-        self.buffer.seek(SeekFrom::Start(0)).unwrap();
+        let handle = Handle::current();
+        handle.enter();
+        block_on(rocket::futures::AsyncSeekExt::seek(
+            &mut self.buffer,
+            SeekFrom::Start(0),
+        ))
+        .unwrap();
         self.buffer.get_mut().truncate(0);
     }
 }
 
-impl<'a> Read for MultipartReader<'a> {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+impl<'a> AsyncRead for MultipartReader<'a> {
+    fn poll_read(
+        mut self: Pin<&mut MultipartReader<'a>>,
+        _cs: &mut Context,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<Result<(), std::io::Error>> {
+        let handle = Handle::current();
+        handle.enter();
         // The number of bytes read into the buffer so far.
         let mut c = 0;
 
         // Find the length of the header buffer to see if it's not empty.
         // If so, send the remaining contents in the buffer.
-        let bufsize = self.buffer.stream_len().unwrap();
+        let bufsize = self.buffer.get_ref().len() as u64;
         if bufsize > 0 {
             // If the buffer isn't empty send the content within it
             if self.buffer.position() < bufsize - 1 {
                 // read operations on the buffer cannot fail.
-                c = self.buffer.read(buf).unwrap();
+                c = block_on(rocket::futures::AsyncReadExt::read(
+                    &mut self.buffer,
+                    buf.initialized_mut(),
+                ))
+                .unwrap();
             }
 
             // Clear the buffer if all of it has already been read
@@ -123,8 +160,8 @@ impl<'a> Read for MultipartReader<'a> {
         }
 
         // If we cannot fill the buffer anymore, so return with the number of bytes read.
-        if c >= buf.len() {
-            return Ok(c);
+        if c >= buf.initialized().len() {
+            return Poll::Ready(Ok(()));
         }
 
         // All the ranges have completed being read.
@@ -133,40 +170,68 @@ impl<'a> Read for MultipartReader<'a> {
         if self.idx >= self.ranges.len() {
             if self.idx == self.ranges.len() {
                 self.write_boundary_closer()?;
-                self.buffer.seek(SeekFrom::Start(0)).unwrap();
+                block_on(rocket::futures::AsyncSeekExt::seek(
+                    &mut self.buffer,
+                    SeekFrom::Start(0),
+                ))
+                .unwrap();
 
                 // Because this is one greater than the length
                 // The function will return Ok(0) from now on
                 self.idx = self.idx + 1;
-                return self.read(&mut buf[c..]);
+                return match block_on(rocket::tokio::io::AsyncReadExt::read(
+                    &mut self,
+                    &mut buf.initialized_mut()[c..],
+                )) {
+                    Ok(_) => Poll::Ready(Ok(())),
+                    Err(e) => Poll::Ready(Err(e)),
+                };
             }
-            return Ok(c);
+            return Poll::Ready(Ok(()));
         }
 
         // Write the range data into the remaining space in the buffer
         let (start, end) = self.ranges[self.idx];
-        let current_position = self.stream.stream_position()?;
+        let current_position = match block_on(self.stream.stream_position()) {
+            Ok(pos) => pos,
+            Err(e) => return Poll::Ready(Err(e)),
+        };
 
         // If we have not written a boundary header yet, we are at the beginning of a new stream
         // Write a boundary header and prepare the stream
         if !self.wrote_boundary_header {
-            self.stream.seek(SeekFrom::Start(start))?;
+            match block_on(self.stream.seek(SeekFrom::Start(start))) {
+                Ok(_) => (),
+                Err(e) => return Poll::Ready(Err(e)),
+            };
             self.write_boundary()?;
+            let stream_len = self.stream_len;
             self.write_boundary_header(
                 "Content-Range",
-                format!("bytes {}-{}/{}", start, end, self.stream_len).as_str(),
+                format!("bytes {}-{}/{}", start, end, stream_len).as_str(),
             )?;
-            self.write_boundary_header("Content-Type", self.content_type.clone())?;
+            let content_type = self.content_type.clone();
+            self.write_boundary_header("Content-Type", content_type)?;
             self.write_boundary_end()?;
 
             self.wrote_boundary_header = true;
 
             // Seek the buffer back to the start to prepare for being read
             // In the next call.
-            self.buffer.seek(SeekFrom::Start(0)).unwrap();
+            block_on(rocket::futures::AsyncSeekExt::seek(
+                &mut self.buffer,
+                SeekFrom::Start(0),
+            ))
+            .unwrap();
 
             // Read until the boundary_header is done being sent
-            return self.read(&mut buf[c..]);
+            return match block_on(rocket::tokio::io::AsyncReadExt::read(
+                &mut self,
+                &mut buf.initialized_mut()[c..],
+            )) {
+                Ok(_) => Poll::Ready(Ok(())),
+                Err(e) => Poll::Ready(Err(e)),
+            };
         }
 
         // Number of bytes remaining until the end
@@ -176,14 +241,26 @@ impl<'a> Read for MultipartReader<'a> {
         // then we have reached the end of this range, send the final piece
         // And increment the range idx by one to move onto the next
         // Set "wrote_boundary_header" to false, allowing the next header to be created
-        if buf.len() - c >= remaining {
-            self.stream.read_exact(&mut buf[c..remaining + c])?;
+        if buf.initialized().len() - c >= remaining {
+            match block_on(rocket::tokio::io::AsyncReadExt::read_exact(
+                &mut self.stream,
+                &mut buf.initialized_mut()[c..remaining + c],
+            )) {
+                Ok(_) => (),
+                Err(e) => return Poll::Ready(Err(e)),
+            };
             self.idx = self.idx + 1;
             self.wrote_boundary_header = false;
-            return Ok(c + remaining);
+            return Poll::Ready(Ok(()));
         }
 
         // Read the next chunk of the range
-        self.stream.read(&mut buf[c..])
+        match block_on(rocket::tokio::io::AsyncReadExt::read(
+            &mut self.stream,
+            &mut buf.initialized_mut()[c..],
+        )) {
+            Ok(_) => Poll::Ready(Ok(())),
+            Err(e) => Poll::Ready(Err(e)),
+        }
     }
 }
