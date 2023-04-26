@@ -40,14 +40,14 @@ fn longer<'a>() -> std::io::Result<SeekStream<'a>> {
     SeekStream::from_path("ison.webm")
 }
 
-fn main() {
-    rocket::Rocket::custom(
-        rocket::Config::build(rocket::config::Environment::Development)
-            .address("localhost")
-            .port(8000)
-            .finalize()
-            .unwrap(),
-    )
-    .mount("/", routes![hello, from_path, long, longer])
-    .launch();
+#[launch]
+fn rocket() -> _ {
+    let config = {
+        let mut config = rocket::Config::default();
+        config.port = 8000;
+        config
+    };
+
+    rocket::Rocket::custom(config)
+        .mount("/", routes![hello, from_path, long, longer])
 }

@@ -4,9 +4,7 @@
 //! see the examples directory for more.
 //!
 //! ```no_run
-//! #![feature(proc_macro_hygiene, decl_macro)]
-//! #[macro_use]
-//! extern crate rocket;
+//! use rocket::{get, launch, routes};
 //! use rocket_seek_stream::SeekStream;
 //!
 //! #[get("/")]
@@ -14,16 +12,10 @@
 //!     SeekStream::from_path("kosmodrom.webm")
 //! }
 //!
-//! fn main() {
-//!     rocket::Rocket::custom(
-//!         rocket::Config::build(rocket::config::Environment::Development)
-//!             .address("localhost")
-//!             .port(8000)
-//!             .finalize()
-//!             .unwrap(),
-//!     )
-//!     .mount("/", routes![home])
-//!    .launch();
+//! #[launch]
+//! fn rocket() -> _ {
+//!     rocket::Rocket::build()
+//!         .mount("/", routes![home])
 //! }
 //!
 //! ```
