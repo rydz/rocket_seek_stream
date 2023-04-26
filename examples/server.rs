@@ -1,7 +1,7 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 /// Run download-videos.sh to download the videos required to run this example
-/// It depends on youtube-dl.
+/// It depends on yt-dlp.
 /// 
 /// Use `cargo run --example server` then navigate to [localhost:8000](http://localhost:8000)
 /// in your browser.
@@ -31,7 +31,7 @@ fn from_path<'a>() -> std::io::Result<SeekStream<'a>> {
 // some long media
 #[get("/long")]
 fn long<'a>() -> std::io::Result<SeekStream<'a>> {
-    SeekStream::from_path("kosmodrom.webm")
+    SeekStream::from_path("tari_tari.webm")
 }
 
 // some longer media
