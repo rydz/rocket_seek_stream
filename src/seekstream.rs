@@ -9,15 +9,15 @@ use rocket::tokio::runtime::Handle;
 use std::cell::RefCell;
 use std::path::Path;
 use std::pin::Pin;
-use tree_magic;
+use tree_magic_mini;
 
 /// Alias trait for AsyncRead + AsyncSeek + Send
 pub trait ReadSeek: AsyncRead + AsyncSeek + Send {}
 impl<T: AsyncRead + AsyncSeek + Send> ReadSeek for T {}
 
 /// Infer the mime type of a stream of bytes using an excerpt from the beginning of the stream
-fn infer_mime_type(prelude: &[u8]) -> String {
-    return tree_magic::from_u8(prelude);
+fn infer_mime_type(prelude: &[u8]) -> &'static str {
+    return tree_magic_mini::from_u8(prelude);
 }
 
 /// Serves a readable and seekable stream,
@@ -150,7 +150,7 @@ impl<'r> Responder<'r, 'static> for SeekStream<'r> {
                 block_on(self.stream.borrow_mut().seek(std::io::SeekFrom::Start(0)))
                     .map_err(|_| SERVER_ERROR)?;
 
-                infer_mime_type(&prelude[..c])
+                infer_mime_type(&prelude[..c]).to_owned()
             }
         };
 
@@ -190,7 +190,7 @@ impl<'r> Responder<'r, 'static> for SeekStream<'r> {
                 let rd = MultipartReader::new(
                     self.stream.into_inner(),
                     stream_len,
-                    mime_type.clone(),
+                    mime_type,
                     ranges,
                 );
 

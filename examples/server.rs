@@ -1,7 +1,7 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 /// Run download-videos.sh to download the videos required to run this example
-/// It depends on youtube-dl.
+/// It depends on yt-dlp.
 /// 
 /// Use `cargo run --example server` then navigate to [localhost:8000](http://localhost:8000)
 /// in your browser.
@@ -31,7 +31,7 @@ fn from_path<'a>() -> std::io::Result<SeekStream<'a>> {
 // some long media
 #[get("/long")]
 fn long<'a>() -> std::io::Result<SeekStream<'a>> {
-    SeekStream::from_path("kosmodrom.webm")
+    SeekStream::from_path("tari_tari.webm")
 }
 
 // some longer media
@@ -40,14 +40,14 @@ fn longer<'a>() -> std::io::Result<SeekStream<'a>> {
     SeekStream::from_path("ison.webm")
 }
 
-fn main() {
-    rocket::Rocket::custom(
-        rocket::Config::build(rocket::config::Environment::Development)
-            .address("localhost")
-            .port(8000)
-            .finalize()
-            .unwrap(),
-    )
-    .mount("/", routes![hello, from_path, long, longer])
-    .launch();
+#[launch]
+fn rocket() -> _ {
+    let config = {
+        let mut config = rocket::Config::default();
+        config.port = 8000;
+        config
+    };
+
+    rocket::Rocket::custom(config)
+        .mount("/", routes![hello, from_path, long, longer])
 }
