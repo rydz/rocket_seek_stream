@@ -54,7 +54,7 @@ fn cursor<'a>() -> SeekStream<'a> {
 }
 ```
 
-Use `cargo run --example server` to run the example. run `examples/download.sh` to download the media it depends on using [youtube-dl](https://github.com/ytdl-org/youtube-dl).
+Use `cargo run --example server` to run the example. run `examples/download.sh` to download the media it depends on using [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 
 ## TODO
 
