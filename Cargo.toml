@@ -1,7 +1,7 @@
 [package]
 name = "rocket_seek_stream"
-version = "0.2.5"
-description="Rocket-rs 0.5.0-rc1 responder to range requests using types that implement AsyncRead + AsyncSeek"
+version = "0.2.6"
+description="Rocket-rs 0.5.0-rc.3 responder to range requests using types that implement AsyncRead + AsyncSeek"
 authors = ["Ryan Dzengelewski <rdzengelewski@gmail.com>", "Samuel Rembisz <sjrembisz07@gmail.com>"]
 edition = "2021"
 license="MIT"
